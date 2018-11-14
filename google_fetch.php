@@ -30,12 +30,15 @@ function searchLatLong($place, $lat, $long, $search_type) {
     $response_a = json_decode($response);
     $hasResults = sizeof($response_a->results) > 0;
 
-    if ($hasResults) {
-        $place_text = "-----------------------------------------------------------------------------------------------------------\n"; 
-        $place_text .= "Place: " . mb_strtoupper(str_replace("\"", "", urldecode($place)), 'UTF-8') . " (" . $search_type . ")\n";
-        $place_text .= "-----------------------------------------------------------------------------------------------------------\n"; 
-        writeFile($place_text);
-    }
+    // no results? OK, quit!
+    if(!$hasResults) return;
+
+
+    $place_text = "-----------------------------------------------------------------------------------------------------------\n"; 
+    $place_text .= "Place: " . mb_strtoupper(str_replace("\"", "", urldecode($place)), 'UTF-8') . " (" . $search_type . ")\n";
+    $place_text .= "-----------------------------------------------------------------------------------------------------------\n"; 
+    writeFile($place_text);
+
 
     foreach ($response_a->results as &$result) {
         
@@ -49,7 +52,9 @@ function searchLatLong($place, $lat, $long, $search_type) {
         // remove types: school, dentist
         $exclude_types = array("school", "dentist", "doctor");
         foreach ($exclude_types as &$exclude) {
-            if(in_array($exclude, $types)) $continue = false;
+            foreach ($types as &$type) {
+                if(strcmp($exclude, $type) != 0) $continue = false;
+            }
         }
 
         // remove weird names: emails (+ names with only Oslo)
@@ -67,7 +72,6 @@ function searchLatLong($place, $lat, $long, $search_type) {
         } else {
             $continue = false;
         }
-        
 
         if($continue) {
             $result = "Name: " . $name;    
@@ -80,7 +84,7 @@ function searchLatLong($place, $lat, $long, $search_type) {
         }
     }
 
-    if($hasResults && $continue) {
+    if($continue) {
         $place_text = "-----------------------------------------------------------------------------------------------------------\n\n\n";
         writeFile($place_text);
     }
